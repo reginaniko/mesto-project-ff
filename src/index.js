@@ -67,10 +67,19 @@ popups.forEach((popup) => {
         ".popup__content, .popup__input, .popup__image, .button"
       )
     ) {
-      console.log("ЧТО ПРОИЗОШЛО", evt);
       closeModal(popup);
     }
   });
+});
+
+//Функция добавления стиля элементу
+function addStyle(element, style) {
+  element.classList.add(style);
+}
+
+//Добавление анимации попапам
+popups.forEach((popup) => {
+  addStyle(popup, "popup_is-animated");
 });
 
 //Слушатель ввода текста в форму редактирования профиля
@@ -113,5 +122,11 @@ formElement.addEventListener("submit", handleFormSubmit);
 
 //Слушатель сабмита новой карточки
 createCardForm.addEventListener("submit", handleAddNewCard);
+
+document.addEventListener("click", function (evt) {
+  if (evt.target.classList.contains("popup_is-opened")) {
+    evt.target.classList.add("popup_is-animated");
+  }
+});
 
 renderCards(initialCards);

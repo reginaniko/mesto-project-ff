@@ -1,5 +1,3 @@
-export { createCard, deleteCard, likeCard };
-
 // Функция создания карточки
 function createCard(
   name,
@@ -38,3 +36,5 @@ function deleteCard(event) {
 function likeCard(evt) {
   evt.target.classList.toggle("card__like-button_is-active");
 }
+
+export { createCard, deleteCard, likeCard };

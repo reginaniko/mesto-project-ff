@@ -27,6 +27,7 @@ const editProfileNameInput = document.querySelector(".popup__input_type_name");
 const editProfileJobInput = document.querySelector(
   ".popup__input_type_description"
 );
+const editProfileButton = editProfileForm.querySelector(".button");
 
 //Окно создания карточки
 const popupCreateCard = document.querySelector(".popup_type_new-card");
@@ -35,6 +36,7 @@ const createCardNameInput = document.querySelector(
   ".popup__input_type_card-name"
 );
 const createCardUrlInput = document.querySelector(".popup__input_type_url");
+const createCardButton = createCardForm.querySelector(".button");
 
 //Окно редактирования аватара пользователя
 const popupEditAvatar = document.querySelector(".popup_type_edit_avatar");
@@ -50,7 +52,7 @@ const cardImagePopupImageCaption =
   popupCardImage.querySelector(".popup__caption");
 
 //Объект конфигурации валидации полей
-const objValidationConfig = {
+const validationConfig = {
   formSelector: ".popup__form",
   inputSelector: ".popup__input",
   submitButtonSelector: ".popup__button",
@@ -95,27 +97,35 @@ function addStyle(element, style) {
 }
 
 //Функция получения профиля
-const getProfile = () => {
+const loadInitialData = () => {
   //Получаем данные пользователя
-  getUserRequest().then((userData) => {
-    //Получаем ID пользователя
-    const currentUserID = userData._id;
+  getUserRequest()
+    .then((userData) => {
+      //Получаем ID пользователя
+      const currentUserID = userData._id;
 
-    //Обновляем информацию пользователя
-    profileTitle.textContent = userData.name;
-    profileDescription.textContent = userData.about;
-    userAvatar.style.backgroundImage = `url(${userData.avatar})`;
+      //Обновляем информацию пользователя
+      profileTitle.textContent = userData.name;
+      profileDescription.textContent = userData.about;
+      userAvatar.style.backgroundImage = `url(${userData.avatar})`;
 
-    //Рендерим карточки
-    getCardsRequest().then((data) => {
-      data.forEach((el) => renderCards(el, "prepend", currentUserID));
+      //Рендерим карточки
+      getCardsRequest()
+        .then((data) => {
+          data.forEach((el) => renderCards(el, "append", currentUserID));
+        })
+        .catch((error) => {
+          console.error("Ошибка загрузки карточек:", error);
+        });
+    })
+    .catch((error) => {
+      console.error("Ошибка загрузки данных пользователя:", error);
     });
-  });
 };
 
 //Слушатель ввода текста в форму редактирования профиля
 profileEditButton.addEventListener("click", function (evt) {
-  clearValidation(editProfileForm, objValidationConfig);
+  clearValidation(editProfileForm, validationConfig);
   openModal(popupEditProfile);
   editProfileNameInput.value = profileTitle.textContent;
   editProfileJobInput.value = profileDescription.textContent;
@@ -124,31 +134,32 @@ profileEditButton.addEventListener("click", function (evt) {
 //Слушатель открытия формы создания карточки
 addNewCardButton.addEventListener("click", function () {
   openModal(popupCreateCard);
-  clearValidation(createCardForm, objValidationConfig);
+  clearValidation(createCardForm, validationConfig);
 });
 
 //Слушатель открытия формы редактирования аватара пользователя
 userAvatar.addEventListener("click", () => {
-  clearValidation(editAvatarForm, objValidationConfig);
+  clearValidation(editAvatarForm, validationConfig);
   openModal(popupEditAvatar);
 });
 
 //Хэндлер редактирования имени и информации о себе
 function handleProfileFormSubmit(evt) {
   evt.preventDefault();
-  const button = editProfileForm.querySelector(".button");
-  button.textContent = "Сохранение...";
+  editProfileButton.textContent = "Сохранение...";
   const newName = editProfileNameInput.value;
   const newJob = editProfileJobInput.value;
   editProfile(editProfileNameInput.value, editProfileJobInput.value)
     .then(() => {
       profileTitle.textContent = newName;
       profileDescription.textContent = newJob;
-      button.textContent = "Сохранить";
       closeModal(popupEditProfile);
     })
     .catch((error) => {
       console.error("Ошибка при сабмите обновления профиля: ", error);
+    })
+    .finally(() => {
+      editProfileButton.textContent = "Сохранить";
     });
 }
 
@@ -159,37 +170,40 @@ function handleProfileAvatarSubmit(evt) {
   updateUserAvatarRequest(editAvatarUrlInput.value)
     .then(() => {
       userAvatar.style.backgroundImage = `url(${editAvatarUrlInput.value})`;
-      editAvatarForm.elements.button.textContent = "Сохранить";
       closeModal(popupEditAvatar);
     })
     .catch((error) => {
       console.error("Ошибка при сабмите обновления аватара: ", error);
+    })
+    .finally(() => {
+      editAvatarForm.elements.button.textContent = "Сохранить";
     });
 }
 
 //Хэндлер добавления новой карточки
 function handleAddNewCard(evt) {
   evt.preventDefault();
-  const button = createCardForm.querySelector(".button");
-  button.textContent = "Сохранение...";
+  createCardButton.textContent = "Сохранение...";
   const newName = createCardNameInput.value;
   const newUrl = createCardUrlInput.value;
-  const obj = {
+  const cardData = {
     name: newName,
     link: newUrl,
     likes: [],
   };
 
-  postNewCard(obj)
+  postNewCard(cardData)
     .then((newCard) => {
       cardsContainer.prepend(
         createCard(newCard, newCard.owner._id, deleteCard, likeCard, openImage)
       );
-      button.textContent = "Сохранить";
+      closeModal(popupCreateCard);
+      evt.target.reset();
     })
-    .catch((err) => console.log("Ошибка при добавлении новой карточки: ", err));
-  closeModal(popupCreateCard);
-  evt.target.reset();
+    .catch((err) => console.log("Ошибка при добавлении новой карточки: ", err))
+    .finally(() => {
+      createCardButton.textContent = "Сохранить";
+    });
 }
 
 //Слушатель сабмита формы редактирования профиля
@@ -201,6 +215,6 @@ createCardForm.addEventListener("submit", handleAddNewCard);
 //Слушатель сабмита обновления аватара
 editAvatarForm.addEventListener("submit", handleProfileAvatarSubmit);
 
-enableValidation(objValidationConfig);
+enableValidation(validationConfig);
 
-getProfile();
+loadInitialData();

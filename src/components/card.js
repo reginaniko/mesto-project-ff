@@ -78,9 +78,13 @@ function createCard(
 function deleteCard(event, cardId) {
   const cardDeleteButton = event.target;
   const cardItem = cardDeleteButton.closest(".places__item");
-  deleteCardRequest(cardId).then(() => {
-    cardItem.remove();
-  });
+  deleteCardRequest(cardId)
+    .then(() => {
+      cardItem.remove();
+    })
+    .catch((error) => {
+      console.error("Ошибка при лайке:", error);
+    });
 }
 
 // Функция лайка карточки
